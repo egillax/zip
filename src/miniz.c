@@ -4435,7 +4435,7 @@ mz_bool mz_zip_reader_extract_to_mem_no_alloc(mz_zip_archive *pZip, mz_uint file
     if ((!pZip) || (!pZip->m_pState) || ((buf_size) && (!pBuf)) || ((user_read_buf_size) && (!pUser_read_buf)) || (!pZip->m_pRead))
         return mz_zip_set_error(pZip, MZ_ZIP_INVALID_PARAMETER);
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!mz_zip_reader_file_stat2(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     /* A directory or zero length file */
@@ -4651,7 +4651,7 @@ mz_bool mz_zip_reader_extract_to_callback(mz_zip_archive *pZip, mz_uint file_ind
     if ((!pZip) || (!pZip->m_pState) || (!pCallback) || (!pZip->m_pRead))
         return mz_zip_set_error(pZip, MZ_ZIP_INVALID_PARAMETER);
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!mz_zip_reader_file_stat2(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     /* A directory or zero length file */
@@ -4863,7 +4863,7 @@ mz_zip_reader_extract_iter_state* mz_zip_reader_extract_iter_new(mz_zip_archive 
     }
 
     /* Fetch file details */
-    if (!mz_zip_reader_file_stat(pZip, file_index, &pState->file_stat))
+    if (!mz_zip_reader_file_stat2(pZip, file_index, &pState->file_stat))
     {
         pZip->m_pFree(pZip->m_pAlloc_opaque, pState);
         return NULL;
@@ -5156,7 +5156,7 @@ mz_bool mz_zip_reader_extract_to_file(mz_zip_archive *pZip, mz_uint file_index, 
     mz_zip_archive_file_stat file_stat;
     MZ_FILE *pFile;
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!mz_zip_reader_file_stat2(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     if ((file_stat.m_is_directory) || (!file_stat.m_is_supported))
@@ -5197,7 +5197,7 @@ mz_bool mz_zip_reader_extract_to_cfile(mz_zip_archive *pZip, mz_uint file_index,
 {
     mz_zip_archive_file_stat file_stat;
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!mz_zip_reader_file_stat2(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     if ((file_stat.m_is_directory) || (!file_stat.m_is_supported))
@@ -5465,7 +5465,7 @@ mz_bool mz_zip_validate_archive(mz_zip_archive *pZip, mz_uint flags)
             mz_uint32 found_index;
             mz_zip_archive_file_stat stat;
 
-            if (!mz_zip_reader_file_stat(pZip, i, &stat))
+            if (!mz_zip_reader_file_stat2(pZip, i, &stat))
                 return MZ_FALSE;
 
             if (!mz_zip_reader_locate_file_v2(pZip, stat.m_filename, NULL, 0, &found_index))
@@ -7678,7 +7678,7 @@ mz_uint mz_zip_reader_get_filename(mz_zip_archive *pZip, mz_uint file_index, cha
     return n + 1;
 }
 
-mz_bool mz_zip_reader_file_stat(mz_zip_archive *pZip, mz_uint file_index, mz_zip_archive_file_stat *pStat)
+mz_bool mz_zip_reader_file_stat2(mz_zip_archive *pZip, mz_uint file_index, mz_zip_archive_file_stat *pStat)
 {
     return mz_zip_file_stat_internal(pZip, file_index, mz_zip_get_cdh(pZip, file_index), pStat, NULL);
 }

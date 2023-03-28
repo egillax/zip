@@ -67,7 +67,7 @@ SEXP R_zip_list(SEXP zipfile) {
   for (i = 0; i < num_files; i++) {
     mz_zip_archive_file_stat file_stat;
     mode_t mode;
-    status = mz_zip_reader_file_stat (&zip_archive, i, &file_stat);
+    status = mz_zip_reader_file_stat2 (&zip_archive, i, &file_stat);
     if (!status) goto cleanup;
 
     SET_STRING_ELT(VECTOR_ELT(result, 0), i, mkChar(file_stat.m_filename));
