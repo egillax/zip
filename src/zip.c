@@ -160,7 +160,7 @@ int zip_unzip(const char *czipfile, const char **cfiles, int num_files,
       }
     }
 
-    if (! mz_zip_reader_file_stat(&zip_archive, idx, &file_stat)) {
+    if (! rlib_mz_zip_reader_file_stat(&zip_archive, idx, &file_stat)) {
       mz_zip_reader_end(&zip_archive);
       if (buffer) free(buffer);
       fclose(zfh);
@@ -249,7 +249,7 @@ int zip_unzip(const char *czipfile, const char **cfiles, int num_files,
 				   /* flags= */ 0, &idx);
     }
 
-    mz_zip_reader_file_stat(&zip_archive, idx, &file_stat);
+    rlib_mz_zip_reader_file_stat(&zip_archive, idx, &file_stat);
     key = file_stat.m_filename;
 
     zip_str_file_path(cexdir, key, &buffer, &buffer_size, cjunkpaths);

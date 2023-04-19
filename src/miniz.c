@@ -4040,7 +4040,7 @@ mz_bool mz_zip_reader_is_file_a_directory(mz_zip_archive *pZip, mz_uint file_ind
     return MZ_FALSE;
 }
 
-static mz_bool mz_zip_file_stat_internal(mz_zip_archive *pZip, mz_uint file_index, const mz_uint8 *pCentral_dir_header, mz_zip_archive_file_stat *pStat, mz_bool *pFound_zip64_extra_data)
+static mz_bool mz_zip_file_stat_internal_rlib(mz_zip_archive *pZip, mz_uint file_index, const mz_uint8 *pCentral_dir_header, mz_zip_archive_file_stat *pStat, mz_bool *pFound_zip64_extra_data)
 {
     mz_uint n;
     const mz_uint8 *p = pCentral_dir_header;
@@ -4315,7 +4315,7 @@ mz_bool mz_zip_reader_extract_to_mem_no_alloc(mz_zip_archive *pZip, mz_uint file
     if ((!pZip) || (!pZip->m_pState) || ((buf_size) && (!pBuf)) || ((user_read_buf_size) && (!pUser_read_buf)) || (!pZip->m_pRead))
         return mz_zip_set_error(pZip, MZ_ZIP_INVALID_PARAMETER);
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!rlib_mz_zip_reader_file_stat(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     /* A directory or zero length file */
@@ -4531,7 +4531,7 @@ mz_bool mz_zip_reader_extract_to_callback(mz_zip_archive *pZip, mz_uint file_ind
     if ((!pZip) || (!pZip->m_pState) || (!pCallback) || (!pZip->m_pRead))
         return mz_zip_set_error(pZip, MZ_ZIP_INVALID_PARAMETER);
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!rlib_mz_zip_reader_file_stat(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     /* A directory or zero length file */
@@ -4743,7 +4743,7 @@ mz_zip_reader_extract_iter_state* mz_zip_reader_extract_iter_new(mz_zip_archive 
     }
 
     /* Fetch file details */
-    if (!mz_zip_reader_file_stat(pZip, file_index, &pState->file_stat))
+    if (!rlib_mz_zip_reader_file_stat(pZip, file_index, &pState->file_stat))
     {
         pZip->m_pFree(pZip->m_pAlloc_opaque, pState);
         return NULL;
@@ -5036,7 +5036,7 @@ mz_bool mz_zip_reader_extract_to_file(mz_zip_archive *pZip, mz_uint file_index, 
     mz_zip_archive_file_stat file_stat;
     MZ_FILE *pFile;
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!rlib_mz_zip_reader_file_stat(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     if ((file_stat.m_is_directory) || (!file_stat.m_is_supported))
@@ -5077,7 +5077,7 @@ mz_bool mz_zip_reader_extract_to_cfile(mz_zip_archive *pZip, mz_uint file_index,
 {
     mz_zip_archive_file_stat file_stat;
 
-    if (!mz_zip_reader_file_stat(pZip, file_index, &file_stat))
+    if (!rlib_mz_zip_reader_file_stat(pZip, file_index, &file_stat))
         return MZ_FALSE;
 
     if ((file_stat.m_is_directory) || (!file_stat.m_is_supported))
@@ -5133,7 +5133,7 @@ mz_bool mz_zip_validate_file(mz_zip_archive *pZip, mz_uint file_index, mz_uint f
 
     pCentral_dir_header = mz_zip_get_cdh(pZip, file_index);
 
-    if (!mz_zip_file_stat_internal(pZip, file_index, pCentral_dir_header, &file_stat, &found_zip64_ext_data_in_cdir))
+    if (!mz_zip_file_stat_internal_rlib(pZip, file_index, pCentral_dir_header, &file_stat, &found_zip64_ext_data_in_cdir))
         return MZ_FALSE;
 
     /* A directory or zero length file */
@@ -5345,7 +5345,7 @@ mz_bool mz_zip_validate_archive(mz_zip_archive *pZip, mz_uint flags)
             mz_uint32 found_index;
             mz_zip_archive_file_stat stat;
 
-            if (!mz_zip_reader_file_stat(pZip, i, &stat))
+            if (!rlib_mz_zip_reader_file_stat(pZip, i, &stat))
                 return MZ_FALSE;
 
             if (!mz_zip_reader_locate_file_v2(pZip, stat.m_filename, NULL, 0, &found_index))
@@ -6114,8 +6114,8 @@ mz_bool mz_zip_writer_add_mem_ex_v2(mz_zip_archive *pZip, const char *pArchive_n
     if (!pState->m_zip64)
     {
         /* Bail early if the archive would obviously become too large */
-        if ((pZip->m_archive_size + num_alignment_padding_bytes + MZ_ZIP_LOCAL_DIR_HEADER_SIZE + archive_name_size 
-			+ MZ_ZIP_CENTRAL_DIR_HEADER_SIZE + archive_name_size + comment_size + user_extra_data_len + 
+        if ((pZip->m_archive_size + num_alignment_padding_bytes + MZ_ZIP_LOCAL_DIR_HEADER_SIZE + archive_name_size
+			+ MZ_ZIP_CENTRAL_DIR_HEADER_SIZE + archive_name_size + comment_size + user_extra_data_len +
 			pState->m_central_dir.m_size + MZ_ZIP_END_OF_CENTRAL_DIR_HEADER_SIZE + user_extra_data_central_len
 			+ MZ_ZIP_DATA_DESCRIPTER_SIZE32) > 0xFFFFFFFF)
         {
@@ -6373,7 +6373,7 @@ mz_bool mz_zip_writer_add_cfile(mz_zip_archive *pZip, const char *pArchive_name,
     if (!pState->m_zip64)
     {
         /* Bail early if the archive would obviously become too large */
-        if ((pZip->m_archive_size + num_alignment_padding_bytes + MZ_ZIP_LOCAL_DIR_HEADER_SIZE + archive_name_size + MZ_ZIP_CENTRAL_DIR_HEADER_SIZE 
+        if ((pZip->m_archive_size + num_alignment_padding_bytes + MZ_ZIP_LOCAL_DIR_HEADER_SIZE + archive_name_size + MZ_ZIP_CENTRAL_DIR_HEADER_SIZE
 			+ archive_name_size + comment_size + user_extra_data_len + pState->m_central_dir.m_size + MZ_ZIP_END_OF_CENTRAL_DIR_HEADER_SIZE + 1024
 			+ MZ_ZIP_DATA_DESCRIPTER_SIZE32 + user_extra_data_central_len) > 0xFFFFFFFF)
         {
@@ -6775,7 +6775,7 @@ mz_bool mz_zip_writer_add_from_zip_reader(mz_zip_archive *pZip, mz_zip_archive *
             return mz_zip_set_error(pZip, MZ_ZIP_TOO_MANY_FILES);
     }
 
-    if (!mz_zip_file_stat_internal(pSource_zip, src_file_index, pSrc_central_header, &src_file_stat, NULL))
+    if (!mz_zip_file_stat_internal_rlib(pSource_zip, src_file_index, pSrc_central_header, &src_file_stat, NULL))
         return MZ_FALSE;
 
     cur_src_file_ofs = src_file_stat.m_local_header_ofs;
@@ -7542,9 +7542,9 @@ mz_uint mz_zip_reader_get_filename(mz_zip_archive *pZip, mz_uint file_index, cha
     return n + 1;
 }
 
-mz_bool mz_zip_reader_file_stat(mz_zip_archive *pZip, mz_uint file_index, mz_zip_archive_file_stat *pStat)
+mz_bool rlib_mz_zip_reader_file_stat(mz_zip_archive *pZip, mz_uint file_index, mz_zip_archive_file_stat *pStat)
 {
-    return mz_zip_file_stat_internal(pZip, file_index, mz_zip_get_cdh(pZip, file_index), pStat, NULL);
+    return mz_zip_file_stat_internal_rlib(pZip, file_index, mz_zip_get_cdh(pZip, file_index), pStat, NULL);
 }
 
 mz_bool mz_zip_end(mz_zip_archive *pZip)
